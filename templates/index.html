@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+  <h1>Todo List</h1>
+  <form action="/todos" method="post">
+    <input type="text" name="task">
+    <button type="submit">追加</button>
+  </form>
+  <ul>
+  {% for task in tasks %}
+    <li>{{ task }}</li>
+  {% endfor %}
+  </ul>
+</body>
+</html>
