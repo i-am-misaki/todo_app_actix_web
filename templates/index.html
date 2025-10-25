@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- Bulma -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+</head>
+<body>
+  <h1>Todo List</h1>
+  <form action="/todos" method="post">
+    <input type="text" name="task">
+    <button type="submit" class="button">追加</button>
+  </form>
+  <div>
+  {% for task in tasks %}
+    <div class="is-flex">
+      <p class="">{{ task }}</p>
+      <button class="">
+         <img src="/static/icons/delete.svg" alt="削除アイコン" class="icon">
+      </button>
+    </div>
+  {% endfor %}
+  </div>
+</body>
+</html>
