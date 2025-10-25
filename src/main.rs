@@ -1,4 +1,4 @@
-// use actix_files::NamedFile;
+use actix_files::Files;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 // use std::sync::Mutex;
 use std::io::{Write, BufRead, BufReader};
@@ -40,7 +40,7 @@ async fn get_todos(tera: web::Data<Tera>) -> impl Responder {
 }
 
 
-async fn add_todos(form: web::Form<TodoForm>, tera: web::Data<Tera>) -> impl Responder {
+async fn add_todos(form: web::Form<TodoForm>) -> impl Responder {
     let mut file = OpenOptions::new()
         .create(true)
         .append(true)
@@ -48,7 +48,13 @@ async fn add_todos(form: web::Form<TodoForm>, tera: web::Data<Tera>) -> impl Res
         .unwrap();
     writeln!(file, "{}", form.task.trim()).unwrap();
 
-    get_todos(tera).await
+    // POST後は /todos にリダイレクト
+    HttpResponse::SeeOther()
+    // HttpResponse::SeeOther()                          「HTTPステータス303 See Other」のレスポンスを作成
+        .append_header(("Location", "/todos"))
+        // .append_header(("Location", "/todos"))         Location ヘッダーとは「リダイレクト先のURL」を指定するもの
+        .finish()
+        // .finish()                                      レスポンスを完成させて返す
 }
 
 
@@ -63,6 +69,9 @@ async fn main() -> std::io::Result<()> {
             .service(hello)
             .route("/todos", web::get().to(get_todos))
             .route("/todos", web::post().to(add_todos))
+
+            // ここに静的ファイルサービスを追加
+            .service(Files::new("/static", "./static").show_files_listing())
     })
     .bind(("127.0.0.1", 8080))?
     .run()
