@@ -1,15 +1,29 @@
 use actix_files::Files;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
-// use std::sync::Mutex;
-use std::io::{Write, BufRead, BufReader};
-use std::fs::{OpenOptions, File};
+use sqlx::{Pool, Postgres};
 use tera::{Tera, Context};
-// use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+
+mod db;
+use db::init_db;
 
 
-#[derive(serde::Deserialize)]
+// 表示用
+#[derive(Deserialize, Serialize)]
 struct TodoForm {
+    id: i32,
     task: String,
+}
+
+#[derive(Deserialize)]
+struct TodoAddForm {
+    task: String
+}
+
+// 削除用
+#[derive(Deserialize)]
+struct TodoDeleteForm {
+    id: i32,
 }
 
 
@@ -21,40 +35,48 @@ async fn hello() -> impl Responder {
 
 
 
-async fn get_todos(tera: web::Data<Tera>) -> impl Responder {
-    // tasks.txt を読み込む
-    let file = File::open("tasks.txt").unwrap_or_else(|_| File::create("tasks.txt").unwrap());
-    // |_| は「エラー内容は使わないよ」という意味の 無名関数（クロージャ）。
-    // 「もし tasks.txt がなかったら、新しく作る（File::create）
-    let reader = BufReader::new(file);
-    let tasks: Vec<String> = reader.lines().map(|l| l.unwrap()).collect();
-    // Vec<String> は 「文字列（String）のリスト」 のこと。
-    // Rust の Vec は 可変長配列（リスト） に近い概念
-    // 「ファイルの各行を文字列に変換して、ベクタ（リスト）にまとめる」処理
+async fn get_todos(tera: web::Data<Tera>, db: web::Data<Pool<Postgres>>) -> impl Responder {
+    // id, task の取得
+    let rows = sqlx::query!("SELECT id, task FROM todos")
+        .fetch_all(db.get_ref())
+        .await
+        .unwrap();
 
-    // Tera に tasks を渡す
+    let tasks: Vec<TodoForm> = rows.into_iter()
+                                .map(|r| TodoForm {
+                                    id: r.id,
+                                    task: r.task
+                                })
+                                .collect();
+
     let mut ctx = Context::new();
     ctx.insert("tasks", &tasks);
     let rendered = tera.render("index.html", &ctx).unwrap();
+
     HttpResponse::Ok().content_type("text/html").body(rendered)
 }
 
 
-async fn add_todos(form: web::Form<TodoForm>) -> impl Responder {
-    let mut file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open("tasks.txt")
+async fn add_todo(form: web::Form<TodoAddForm>, db: web::Data<Pool<Postgres>>) -> impl Responder {
+    sqlx::query!("INSERT INTO todos (task) VALUES ($1)", form.task)
+        .execute(db.get_ref())
+        .await
         .unwrap();
-    writeln!(file, "{}", form.task.trim()).unwrap();
 
-    // POST後は /todos にリダイレクト
     HttpResponse::SeeOther()
-    // HttpResponse::SeeOther()                          「HTTPステータス303 See Other」のレスポンスを作成
         .append_header(("Location", "/todos"))
-        // .append_header(("Location", "/todos"))         Location ヘッダーとは「リダイレクト先のURL」を指定するもの
         .finish()
-        // .finish()                                      レスポンスを完成させて返す
+}
+
+async fn delete_todo(form: web::Form<TodoDeleteForm>, db: web::Data<Pool<Postgres>>) -> impl Responder {
+    sqlx::query!("DELETE FROM todos WHERE id = $1", form.id)
+        .execute(db.get_ref())
+        .await
+        .unwrap();
+
+    HttpResponse::SeeOther()
+        .append_header(("Location", "/todos"))
+        .finish()
 }
 
 
@@ -62,13 +84,16 @@ async fn add_todos(form: web::Form<TodoForm>) -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let tera = Tera::new("templates/**/*").unwrap();
+    let pool = init_db().await;
 
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(tera.clone()))
+            .app_data(web::Data::new(pool.clone()))
             .service(hello)
             .route("/todos", web::get().to(get_todos))
-            .route("/todos", web::post().to(add_todos))
+            .route("/todos", web::post().to(add_todo))
+            .route("/todo/delete", web::post().to(delete_todo))
 
             // ここに静的ファイルサービスを追加
             .service(Files::new("/static", "./static").show_files_listing())
@@ -77,3 +102,4 @@ async fn main() -> std::io::Result<()> {
     .run()
     .await
 }
+
