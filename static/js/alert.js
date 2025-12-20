@@ -12,7 +12,7 @@ function DeleteConfirm(taskId){
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
-      confirmButtonText: "削除すっぞ",
+      confirmButtonText: "削除",
       cancelButtonText: "やっぱやめる"
     }).then((result) => {
       if (result.isConfirmed) {
