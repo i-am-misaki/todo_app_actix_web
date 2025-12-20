@@ -1,3 +1,10 @@
+//! TODOアプリのルーティングとハンドラ定義
+//!
+//! - GET /todos
+//! - POST /todos
+//! - PUT /todo/edit
+//! - POST /todo/delete
+
 use actix_files::Files;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use sqlx::{Pool, Postgres};
@@ -10,21 +17,27 @@ mod db;
 use db::init_db;
 
 
-// 表示用
+/// TODO 作成・編集時に使用するフォームデータ
 #[derive(Deserialize, Serialize)]
 struct TodoForm {
+    /// TODO ID
     id: i32,
+
+    /// タスク内容
     task: String,
 }
 
+/// TODO 追加に使用するフォームデータ
 #[derive(Deserialize)]
 struct TodoAddForm {
+    /// タスク内容
     task: String
 }
 
-// 削除用
+// TODO 削除に使用するフォームデータ
 #[derive(Deserialize)]
 struct TodoDeleteForm {
+    /// TODO ID
     id: i32,
 }
 
@@ -36,7 +49,14 @@ async fn hello() -> impl Responder {
 }
 
 
-
+/// TODO 一覧を取得して表示する。
+///
+/// # 処理内容
+/// - todos テーブルから全件取得
+/// - Tera テンプレートに渡して HTML を返却
+///
+/// # レスポンス
+/// - 200 OK (text/html)
 async fn get_todos(tera: web::Data<Tera>, db: web::Data<Pool<Postgres>>) -> impl Responder {
     // id, task の取得
     let rows = sqlx::query!("SELECT id, task FROM todos")
@@ -59,6 +79,10 @@ async fn get_todos(tera: web::Data<Tera>, db: web::Data<Pool<Postgres>>) -> impl
 }
 
 
+/// TODOを新規追加する。
+///
+/// フォームから受け取ったタスク内容を DB に保存し、
+/// 一覧画面へリダイレクトする。
 async fn add_todo(form: web::Form<TodoAddForm>, db: web::Data<Pool<Postgres>>) -> impl Responder {
     sqlx::query!("INSERT INTO todos (task) VALUES ($1)", form.task)
         .execute(db.get_ref())
@@ -70,6 +94,10 @@ async fn add_todo(form: web::Form<TodoAddForm>, db: web::Data<Pool<Postgres>>) -
         .finish()
 }
 
+
+/// TODOを削除する。
+///
+/// 指定された ID の TODO を削除する。
 async fn delete_todo(form: web::Form<TodoDeleteForm>, db: web::Data<Pool<Postgres>>) -> impl Responder {
     sqlx::query!("DELETE FROM todos WHERE id = $1", form.id)
         .execute(db.get_ref())
@@ -81,6 +109,12 @@ async fn delete_todo(form: web::Form<TodoDeleteForm>, db: web::Data<Pool<Postgre
         .finish()
 }
 
+
+/// TODOを編集する
+///
+/// # 引数
+/// - id: 編集対象のTODO ID
+/// - task: 更新後のタスク内容
 async fn edit_todo(form: web::Form<TodoForm>, db: web::Data<Pool<Postgres>>) -> impl Responder {
     sqlx::query!("UPDATE todos SET task = $1 WHERE id = $2", form.task, form.id)
         .execute(db.get_ref())
