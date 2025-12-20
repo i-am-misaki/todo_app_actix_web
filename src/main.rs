@@ -3,6 +3,8 @@ use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use sqlx::{Pool, Postgres};
 use tera::{Tera, Context};
 use serde::{Deserialize, Serialize};
+use dotenvy::dotenv;
+
 
 mod db;
 use db::init_db;
@@ -83,6 +85,7 @@ async fn delete_todo(form: web::Form<TodoDeleteForm>, db: web::Data<Pool<Postgre
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
     let tera = Tera::new("templates/**/*").unwrap();
     let pool = init_db().await;
 
