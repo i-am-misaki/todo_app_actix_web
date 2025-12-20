@@ -10,6 +10,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Reggae+One&display=swap" rel="stylesheet">
+    <!-- sweetalert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- custom js -->
+     <script src="/static/js/alert.js"></script>
 </head>
 <style>
   body {
@@ -32,13 +36,15 @@
     <ul>
     {% for task in tasks %}
     <li class="box" style="border: 2px solid #b0c4de;">
-      <form action="/todo/delete" method="post" class="is-flex is-justify-content-space-between is-align-items-center">
-        <input hidden name="id" value="{{ task.id }}"/>
+      <div class="is-flex is-justify-content-space-between is-align-items-center">
         <p class="is-size-5 m-0">{{ task.task }}</p>
-        <button class="button is-danger is-outlined">
-          <span>削除すっぞ</span>
-        </button>
-      </form>
+        <div>
+          <button type="button" onclick="DisplayEditModal('{{ task.id }}', '{{ task.task }}')" class="button is-link is-outlined">編集すっぞ</button>
+          <button type="button" onclick="DeleteConfirm('{{ task.id }}')" class="button is-danger is-outlined">
+            <span>削除すっぞ</span>
+          </button>
+        </div>
+      </div>
     </li>
     {% endfor %}
     </ul>
