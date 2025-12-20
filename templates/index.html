@@ -38,9 +38,12 @@
     <li class="box" style="border: 2px solid #b0c4de;">
       <div class="is-flex is-justify-content-space-between is-align-items-center">
         <p class="is-size-5 m-0">{{ task.task }}</p>
-        <button type="button" onclick="DeleteConfirm('{{ task.id }}')" class="button is-danger is-outlined">
-          <span>削除すっぞ</span>
-        </button>
+        <div>
+          <button type="button" onclick="DisplayEditModal('{{ task.id }}', '{{ task.task }}')" class="button is-link is-outlined">編集すっぞ</button>
+          <button type="button" onclick="DeleteConfirm('{{ task.id }}')" class="button is-danger is-outlined">
+            <span>削除すっぞ</span>
+          </button>
+        </div>
       </div>
     </li>
     {% endfor %}

@@ -81,6 +81,17 @@ async fn delete_todo(form: web::Form<TodoDeleteForm>, db: web::Data<Pool<Postgre
         .finish()
 }
 
+async fn edit_todo(form: web::Form<TodoForm>, db: web::Data<Pool<Postgres>>) -> impl Responder {
+    sqlx::query!("UPDATE todos SET task = $1 WHERE id = $2", form.task, form.id)
+        .execute(db.get_ref())
+        .await
+        .unwrap();
+
+    HttpResponse::SeeOther()
+        .append_header(("Location", "/todos"))
+        .finish()
+}
+
 
 
 #[actix_web::main]
@@ -97,6 +108,7 @@ async fn main() -> std::io::Result<()> {
             .route("/todos", web::get().to(get_todos))
             .route("/todos", web::post().to(add_todo))
             .route("/todo/delete", web::post().to(delete_todo))
+            .route("/todo/edit", web::put().to(edit_todo))
 
             // ここに静的ファイルサービスを追加
             .service(Files::new("/static", "./static").show_files_listing())
