@@ -4,7 +4,7 @@ use tera::{Tera, Context};
 
 use crate::forms::{TodoAddForm, TodoEditForm, TodoDeleteForm};
 use crate::models::Todo;
-use crate::repository::todo_repo;
+use crate::repository::todo;
 
 
 
@@ -18,7 +18,7 @@ use crate::repository::todo_repo;
 /// - 200 OK (text/html)
 pub async fn get_todos(tera: web::Data<Tera>, db: web::Data<Pool<Postgres>>) -> impl Responder {
     // id, task の取得
-    let tasks: Vec<Todo> = todo_repo::find_all(db.get_ref())
+    let tasks: Vec<Todo> = todo::find_all(db.get_ref())
         .await
         .unwrap();
 
@@ -35,7 +35,7 @@ pub async fn get_todos(tera: web::Data<Tera>, db: web::Data<Pool<Postgres>>) -> 
 /// フォームから受け取ったタスク内容を DB に保存し、
 /// 一覧画面へリダイレクトする。
 pub async fn add_todo(form: web::Form<TodoAddForm>, db: web::Data<Pool<Postgres>>) -> impl Responder {
-    todo_repo::insert(db.get_ref(), &form.task)
+    todo::insert(db.get_ref(), &form.task)
         .await
         .unwrap();
 
@@ -49,7 +49,7 @@ pub async fn add_todo(form: web::Form<TodoAddForm>, db: web::Data<Pool<Postgres>
 ///
 /// 指定された ID の TODO を削除する。
 pub async fn delete_todo(form: web::Form<TodoDeleteForm>, db: web::Data<Pool<Postgres>>) -> impl Responder {
-    todo_repo::delete(db.get_ref(), form.id)
+    todo::delete(db.get_ref(), form.id)
         .await
         .unwrap();
 
@@ -65,7 +65,7 @@ pub async fn delete_todo(form: web::Form<TodoDeleteForm>, db: web::Data<Pool<Pos
 /// - id: 編集対象のTODO ID
 /// - task: 更新後のタスク内容
 pub async fn edit_todo(form: web::Form<TodoEditForm>, db: web::Data<Pool<Postgres>>) -> impl Responder {
-    todo_repo::update(db.get_ref(), &form.id, &form.task)
+    todo::update(db.get_ref(), &form.id, &form.task)
         .await
         .unwrap();
 
